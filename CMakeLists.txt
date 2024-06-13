@@ -55,6 +55,11 @@ else()
 endif()
 
 target_include_directories(xsmm PUBLIC ${XSMM_INCLUDE_DIRS})
+add_definitions(-DLIBXSMM_PERF)
+add_definitions(-DLIBXSMM_PERF_JITDUMP)
+add_definitions(-DLIBXSMM_VTUNE)
+target_include_directories(xsmm PUBLIC /opt/intel/vtune/include)
+find_library(libjitprofiling NAME jitprofiling PATHS /opt/intel/vtune/sdk/lib64/)
 
 # https://github.com/libxsmm/libxsmm/tree/main#link-instructions
 # Please pass BLAS config by "-D__BLAS=0"
@@ -76,3 +81,11 @@ check_library_exists(rt sched_yield "" XSMM_LIBRT)
 if(XSMM_LIBRT)
   target_link_libraries(xsmm PUBLIC rt)
 endif()
+
+add_custom_target(_final_xsmm ALL
+    COMMAND ar x ${libjitprofiling}
+    COMMAND ar rs libxsmm.a jitprofiling.o
+    COMMAND rm jitprofiling.o
+    COMMAND echo "Done!"
+    DEPENDS xsmm
+)
